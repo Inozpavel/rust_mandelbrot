@@ -16,9 +16,9 @@ fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_str(&std::env::var("RUST_LOG").unwrap_or("info".to_string()))?).init();
     let args = AppAgrs::parse();
-    let parallelism = std::thread::available_parallelism().context("Get available parallelism")?;
+    let parallelism = std::thread::available_parallelism().context("Check available parallelism")?;
     let mut parallelism = parallelism.get();
-    
+
     debug!("App args: {args:?}");
     debug!("Available parallelism: {}", parallelism);
 
