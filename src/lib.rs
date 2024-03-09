@@ -1,7 +1,9 @@
 use anyhow::Context;
 use image::GrayImage;
-use num::Complex;
+use itertools::Itertools;
 use num::complex::Complex64;
+use num::Complex;
+use rayon::prelude::*;
 
 pub mod app_args;
 
@@ -55,30 +57,24 @@ fn render(
 }
 
 pub fn par_render(
-    num_threads: usize,
     limit: u32,
     pixels: &mut [u8],
-    bounds @ (x_bound, y_bound): (usize, usize),
+    bounds @ (x_bound, _y_bound): (usize, usize),
     upper_left: Complex64,
     lower_right: Complex64,
 ) {
-    let rows_ber_band = y_bound / num_threads + 1;
-    let bands = pixels.chunks_mut(rows_ber_band * x_bound);
+    let bands = pixels.chunks_mut(x_bound).enumerate().collect_vec();
 
-    rayon::scope(|spawner| {
-        for (i, band) in bands.into_iter().enumerate() {
-            let top = rows_ber_band * i;
-            let height = band.len() / x_bound;
-            let band_bounds = (x_bound, height);
-            let band_upper_left = pixel_to_point(bounds, (0, top), upper_left, lower_right);
-            let band_lower_right =
-                pixel_to_point(bounds, (x_bound, top + height), upper_left, lower_right);
+    bands.into_par_iter().for_each(|(i, band)| {
+        let top = i;
+        let height = band.len() / x_bound;
+        let band_bounds = (x_bound, height);
+        let band_upper_left = pixel_to_point(bounds, (0, top), upper_left, lower_right);
+        let band_lower_right =
+            pixel_to_point(bounds, (x_bound, top + height), upper_left, lower_right);
 
-            spawner.spawn(move |_| {
-                render(limit, band, band_bounds, band_upper_left, band_lower_right);
-            });
-        }
-    })
+        render(limit, band, band_bounds, band_upper_left, band_lower_right);
+    });
 }
 
 pub fn write_image(
