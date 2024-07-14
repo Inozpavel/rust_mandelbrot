@@ -6,7 +6,7 @@ use mimalloc::MiMalloc;
 use tracing::debug;
 use tracing_subscriber::EnvFilter;
 
-use mandelbrot::app_args::AppAgrs;
+use mandelbrot::app_args::AppArgs;
 use mandelbrot::{par_render, write_image};
 
 const ONE_BYTE_MAX_COLOR_NUMBER: u32 = 255;
@@ -20,7 +20,7 @@ fn main() -> anyhow::Result<()> {
             &std::env::var("RUST_LOG").unwrap_or("info".to_string()),
         )?)
         .init();
-    let args = AppAgrs::parse();
+    let args = AppArgs::parse();
     let parallelism =
         std::thread::available_parallelism().context("Check available parallelism")?;
     debug!("App args: {args:?}");
